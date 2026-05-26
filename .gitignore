@@ -1,0 +1,34 @@
+# --- Agent / local instructions ---
+AGENTS.md
+
+# --- Python ---
+__pycache__/
+*.pyc
+.pytest_cache/
+.pymon
+.venv/
+venv/
+
+# --- Dataset (never commit raw data) ---
+data/raw/*
+!data/raw/.gitkeep
+
+# --- Derived / generated data ---
+data/processed/*
+!data/processed/.gitkeep
+
+# --- Model checkpoints ---
+outputs/checkpoints/*
+!outputs/checkpoints/.gitkeep
+*.pt
+*.pth
+
+# --- Training artifacts ---
+outputs/figures/*
+!outputs/figures/.gitkeep
+outputs/metrics/*
+!outputs/metrics/.gitkeep
+outputs/history_*.json
+
+# --- Plans and personal notes ---
+docs/superpowers/

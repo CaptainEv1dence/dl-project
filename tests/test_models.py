@@ -48,3 +48,41 @@ def test_resnet18_freezes_backbone_but_not_classifier():
 def test_create_model_raises_for_unknown():
     with pytest.raises(ValueError, match="Unknown model_name"):
         create_model("bad_name")
+
+# Add this import near the other model imports:
+from src.models.efficientnet_transfer import EfficientNetB2EmotionClassifier
+
+# Add these tests before test_create_model_raises_for_unknown():
+
+def test_efficientnet_b2_accepts_grayscale_and_outputs_logits():
+    model = EfficientNetB2EmotionClassifier(num_classes=7, weights=None, freeze_backbone=True)
+    x = torch.randn(2, 1, 48, 48)
+    logits = model(x)
+    assert logits.shape == (2, 7)
+
+
+def test_efficientnet_b2_freezes_backbone_but_not_classifier():
+    model = EfficientNetB2EmotionClassifier(num_classes=7, weights=None, freeze_backbone=True)
+
+    backbone_params = [
+        p.requires_grad
+        for name, p in model.backbone.named_parameters()
+        if not name.startswith("classifier.")
+    ]
+    head_params = [
+        p.requires_grad
+        for name, p in model.backbone.named_parameters()
+        if name.startswith("classifier.")
+    ]
+
+    assert backbone_params
+    assert head_params
+    assert not any(backbone_params)
+    assert all(head_params)
+
+
+def test_create_model_builds_efficientnet_b2():
+    model = create_model("efficientnet_b2", weights=None, freeze_backbone=True)
+    x = torch.randn(2, 1, 48, 48)
+    logits = model(x)
+    assert logits.shape == (2, 7)

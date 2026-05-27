@@ -5,3 +5,5 @@ resnet18,outputs/checkpoints/resnet18_best.pt,val,,,,,,,,,,,
 baseline_cnn,outputs/checkpoints/baseline_cnn_best.pt,test,,,,,,,,,,,
 se_cnn,outputs/checkpoints/se_cnn_best.pt,test,,,,,,,,,,,
 resnet18,outputs/checkpoints/resnet18_best.pt,test,,,,,,,,,,,
+efficientnet_b2,outputs/checkpoints/best_efficientnet_b2.pt,val,0.7129,0.6972,0.7135,0.6625,0.7000,0.5737,0.8901,0.5902,0.8014,0.6627,EfficientNet-B2 ImageNet pretrained 224px AdamW label smoothing sqrt class weights strong aug freeze-unfreeze
+efficientnet_b2,outputs/checkpoints/best_efficientnet_b2.pt,test,0.7196,0.7147,0.7192,0.6450,0.7707,0.5891,0.8932,0.6054,0.8267,0.6727,EfficientNet-B2 ImageNet pretrained 224px AdamW label smoothing sqrt class weights strong aug freeze-unfreeze

@@ -26,7 +26,7 @@ def preprocess_image(
     """Load an image from disk and return a model-ready tensor with batch dimension."""
 
     img = Image.open(image_path).convert("L")
-    img = img.resize((48, 48), Image.BILINEAR)
+    img = img.resize((image_size, image_size), Image.BILINEAR)
     img_array = np.array(img, dtype=np.uint8)
 
     transform = get_eval_transforms(

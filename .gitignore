@@ -1,5 +1,9 @@
 # --- Agent / local instructions ---
 AGENTS.md
+.DS_Store
+*copilot*
+*claude*
+*cursor*
 
 # --- Python ---
 __pycache__/
@@ -23,12 +27,6 @@ outputs/checkpoints/*
 *.pt
 *.pth
 
-# --- Training artifacts ---
-outputs/figures/*
-!outputs/figures/.gitkeep
-outputs/metrics/*
-!outputs/metrics/.gitkeep
-outputs/history_*.json
-
 # --- Plans and personal notes ---
 docs/superpowers/
+*.ipynb

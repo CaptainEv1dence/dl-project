@@ -85,7 +85,7 @@ Data readiness is validated with:
 python -m src.data.prepare_data --csv data/raw/fer2013.csv --out data/processed/dataset_stats.json
 ```
 
---
+---
 
 ## 4. Methods
 
@@ -266,13 +266,20 @@ The model was tested live on a laptop webcam. Below: bounding box, emotion label
 **Fear (84.2% confidence):**
 ![Realtime fear](docs/figures/realtime/fear_84.2.png)
 
+**Sadness (86.2% confidence):**
+![Realtime sadness](docs/figures/realtime/sadness.png)
+
+**Surprise (67.86% confidence):**
+![Realtime surprise](docs/figures/realtime/surprise.jpg)
+
 ---
 
 ## 8. Findings and Conclusions
 
-1. **Transfer learning at higher resolution wins on FER-2013.** EfficientNet-B2 at 224px with ImageNet pretraining and a disciplined fine-tuning recipe reaches **~72% test accuracy** and **~0.715 macro-F1**.
-2. **Macro-F1 and class weights are essential** given imbalance: sqrt-weighted loss + label smoothing improved minority-class behavior without collapsing majority-class precision.
-3. **Freeze-then-unfreeze is effective:** most gain appears at epoch 3 when the backbone unfreezes, best val macro-F1 occurs mid-schedule (epoch 32), not the last epoch—early stopping on val macro-F1 is justified.
+1. Transfer learning at higher resolution wins on FER-2013. EfficientNet-B2 at 224px with ImageNet pretraining and a disciplined fine-tuning recipe reaches ~72% test accuracy and ~0.715 macro-F1.
+2. Macro-F1 and class weights are essential given imbalance: sqrt-weighted loss + label smoothing improved minority-class behavior without collapsing majority-class precision.
+3. Freeze-then-unfreeze is effective: most gain appears at epoch 3 when the backbone unfreezes, best val macro-F1 occurs mid-schedule (epoch 32), not the last epoch—early stopping on val macro-F1 is justified.
+
 ---
 
 ## 10. Reproducibility

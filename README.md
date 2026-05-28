@@ -1,4 +1,5 @@
 # Deep Emotion Recognition
+<img width="1214" height="1122" alt="image" src="https://github.com/user-attachments/assets/90297ddf-62a1-47cc-8a86-afbb4058f57a" />
 
 PyTorch pipeline for facial expression classification on FER-2013.
 

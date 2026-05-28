@@ -56,9 +56,9 @@ python -m src.data.convert_folders_to_csv --raw-dir data/raw --out data/raw/fer2
 | neutral   | 6,198                | 17.3%           |
 
 
-(docs/figures/class distrib.png)
-(docs/figures/class distrib train val.png)
-(docs/figures/sample.png)
+![Overall label distribution](docs/figures/class distrib.png)
+![Distribution across splits](docs/figures/class distrib train val.png)
+![Samples](docs/figures/sample.png)
 
 Pixel statistics (grayscale): mean **129.38**, std **65.08**.
 
@@ -212,7 +212,7 @@ EfficientNet-B2’s largest gain on fear (+0.113 F1) and sadness (+0.105 F1) exp
 
 ### 6.5 Training dynamics (EfficientNet-B2)
 
-(outputs/figures/curves_efficientnet_b2.png)
+![Training curves](outputs/figures/curves_efficientnet_b2.png)
 
 After unfreezing (epoch 3), validation macro-F1 rises sharply—pretraining provides useful features once the head has warmed up. Later epochs show mild overfitting on train accuracy (~0.99) while validation plateaus near ~0.71 accuracy / ~0.70 macro-F1.
 
@@ -221,12 +221,12 @@ After unfreezing (epoch 3), validation macro-F1 rises sharply—pretraining prov
 **Test set** (rows = true label, columns = predicted; order: anger, disgust, fear, happiness, sadness, surprise, neutral):
 
 Confusion matrix — EfficientNet-B2, test split
-(docs/figures/confusion_matrix_efficientnet_b2_test.png)
+![Confusion matrix test](docs/figures/confusion_matrix_efficientnet_b2_test.png)
 
 **Validation split:**
 
 Confusion matrix — EfficientNet-B2, validation split
-(docs/figures/confusion_matrix_efficientnet_b2_val.png)
+![Confusion matrix val](docs/figures/confusion_matrix_efficientnet_b2_val.png)
 
 ---
 
@@ -256,10 +256,10 @@ Pipeline: OpenCV capture -> **Haar frontal-face detector** -> crop -> same prepr
 The model was tested live on a laptop webcam. Below: bounding box, emotion label, and confidence.
 
 **Happiness (87.7% confidence):**
-(docs/figures/realtime/happiness_87.7.png)
+![Realtime happiness](docs/figures/realtime/happiness_87.7.png)
 
 **Fear (84.2% confidence):**
-(docs/figures/realtime/fear_84.2.png)
+![Realtime fear](docs/figures/realtime/fear_84.2.png)
 
 ---
 

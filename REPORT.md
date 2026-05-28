@@ -1,6 +1,7 @@
 # Deep Emotion Recognition — Project Report
 
 **Course project:** Facial expression classification on FER-2013  
+**GitHub:** https://github.com/CaptainEv1dence/dl-project
 **Team:** Iaroslav Kolomiets, Elizaveta Kamenskaya, Petr Kovalev, Dmitrii Plotnikov
 
 ---

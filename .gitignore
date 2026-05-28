@@ -28,5 +28,4 @@ outputs/checkpoints/*
 *.pth
 
 # --- Plans and personal notes ---
-docs/superpowers/
 *.ipynb

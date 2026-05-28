@@ -17,9 +17,9 @@ The final main model is **EfficientNet-B2**.
 
 | Model               |   Accuracy |   Macro-F1 | Weighted-F1 |
 | ------------------- | ---------: | ---------: | ----------: |
-| Baseline CNN        |      0.592 |      0.488 |       0.581 |
-| SE-CNN              |      0.603 |      0.533 |       0.599 |
-| ResNet-18           |      0.637 |      0.633 |       0.636 |
+| Baseline CNN        |      0.6108 |      0.5081 |       0.6031 |
+| SE-CNN              |      0.6045 |      0.4966 |       0.5912 |
+| ResNet-18           |      0.7034 |      0.6947 |       0.7028 |
 | **EfficientNet-B2** | **0.7196** | **0.7147** |  **0.7192** |
 
 EfficientNet-B2 is the best model.
@@ -55,17 +55,17 @@ Hardest classes: **fear** and **sadness**.
 
 ## Per-class F1 for ResNet-18
 
-| Emotion   | Precision | Recall |    F1 | Support |
-| --------- | --------: | -----: | ----: | ------: |
-| anger     |     0.526 |  0.554 | 0.540 |     958 |
-| disgust   |     0.802 |  0.622 | 0.701 |     111 |
-| fear      |     0.541 |  0.425 | 0.476 |    1024 |
-| happiness |     0.841 |  0.813 | 0.827 |    1774 |
-| sadness   |     0.476 |  0.526 | 0.500 |    1247 |
-| surprise  |     0.746 |  0.807 | 0.775 |     831 |
-| neutral   |     0.598 |  0.623 | 0.610 |    1233 |
+| Emotion   | Precision | Recall |     F1 | Support |
+| --------- | --------: | -----: | -----: | ------: |
+| anger     |     0.636 |  0.621 |  0.629 |     958 |
+| disgust   |     0.804 |  0.667 |  0.729 |     111 |
+| fear      |     0.602 |  0.525 |  0.561 |    1024 |
+| happiness |     0.887 |  0.890 |  0.888 |    1774 |
+| sadness   |     0.563 |  0.589 |  0.575 |    1247 |
+| surprise  |     0.824 |  0.824 |  0.824 |     831 |
+| neutral   |     0.629 |  0.685 |  0.656 |    1233 |
 
-Hardest class for ResNet-18: **fear** with F1 = 0.476, often confused with surprise and anger.
+Hardest class for ResNet-18: **fear** with F1 = 0.561, often confused with surprise and anger.
 
 ---
 

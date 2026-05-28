@@ -2,8 +2,8 @@
 
 **Course project:** Facial expression classification on FER-2013  
 **Final model:** EfficientNet-B2 (ImageNet transfer learning)  
-**Repository:** `dl-project`
-**:** `dl-project`
+**Repository:** `dl-project`  
+**Team:** Iaroslav Kolomiets, Elizaveta Kamenskaya, Petr Kovalev, Dmitrii Plotnikov
 
 ---
 
@@ -33,7 +33,7 @@ Folder-based Kaggle data were converted once with:
 python -m src.data.convert_folders_to_csv --raw-dir data/raw --out data/raw/fer2013.csv
 ```
 
-**Split policy:** `Training` uses the train folder; `PrivateTest` uses the test folder. **Validation** (`PublicTest`) is a **10% hold-out from train** (seed 42), not the original competition public split—documented in `docs/templates/dataset_readiness.md` for reproducibility.
+**Split policy:** `Training` uses the train folder; `PrivateTest` uses the test folder. **Validation** (`PublicTest`) is a **10% hold-out from train** (seed 42, `random_state=42`), not the original Kaggle competition public split. This keeps a fixed validation set for checkpoint selection while using the Kaggle `test/` folder as the held-out test set.
 
 ### 2.2 Split and class distribution
 
@@ -75,23 +75,95 @@ python -m src.data.prepare_data --csv data/raw/fer2013.csv --out data/processed/
 
 ---
 
-## 3. Methods
+## 3. Exploratory Data Analysis
+
+EDA was performed in `dataset_analysis.ipynb` on the full CSV (`35,887` rows × 3 columns: `emotion`, `pixels`, `Usage`). Figures below are saved under `docs/figures/`.
+
+### 3.1 Dataset overview
+
+After loading `data/raw/fer2013.csv`, every row has a valid 48×48 grayscale face encoded as 2,304 space-separated pixel values in `[0, 255]`.
+
+| Column | Description |
+|--------|-------------|
+| `emotion` | Integer label 0–6 |
+| `pixels` | Flattened 48×48 grayscale |
+| `Usage` | `Training`, `PublicTest`, or `PrivateTest` |
+
+### 3.2 Split sizes
+
+| Usage | Role | Samples |
+|-------|------|--------:|
+| `Training` | Train | 25,839 |
+| `PublicTest` | Validation (10% of train folder) | 2,870 |
+| `PrivateTest` | Test (Kaggle test folder) | 7,178 |
+
+### 3.3 Global class distribution
+
+Counts over the **full dataset** (all splits combined):
+
+| Emotion | Count | Share |
+|---------|------:|------:|
+| happiness | 8,989 | 25.05% |
+| neutral | 6,198 | 17.27% |
+| sadness | 6,077 | 16.93% |
+| fear | 5,121 | 14.27% |
+| anger | 4,953 | 13.80% |
+| surprise | 4,002 | 11.15% |
+| disgust | 547 | 1.52% |
+
+**Imbalance ratio:** happiness has **~16.4×** more samples than disgust. Accuracy alone would reward predicting happiness; we therefore use **macro-F1** and **sqrt class weights** in training.
+
+![Overall emotion class distribution in FER-2013](<docs/figures/output.png>)
+
+### 3.4 Class distribution per split
+
+The relative class proportions are **similar across train, validation, and test**, so split leakage from imbalance is unlikely—the main issue is global rarity of disgust and the difficulty of negative-valence classes.
+
+![Class distribution across Training, Validation, and Test splits](<docs/figures/class distrib train val.png>)
+
+### 3.5 Sample faces (48×48)
+
+One random example per class (seed 42) illustrates typical FER-2013 quality: centered or off-center faces, varying contrast, and low spatial detail at native resolution.
+
+![Sample faces from each emotion category](docs/figures/sample.png)
+
+**Visual observations:**
+
+- **Happiness** often shows a clear smile; easiest class for both humans and models.
+- **Surprise** tends to have raised brows / wide eyes; distinct from happiness.
+- **Disgust** samples are few and sometimes subtle—high variance for the classifier.
+- **Fear, sadness, neutral, anger** can look similar at 48×48 (subtle mouth and brow changes), matching later confusion-matrix errors.
+
+### 3.6 EDA conclusions → modeling choices
+
+| EDA finding | Training response |
+|-------------|-------------------|
+| Severe class imbalance (disgust 1.5%) | `--class-weights sqrt` in `src/train.py` |
+| Noisy / ambiguous labels | `--label-smoothing 0.1` |
+| Small crops, pose variation | `--strong-aug` (flip, rotation, affine, RandomErasing, brightness/contrast jitter) |
+| Low native resolution | Upscale to **224×224**, ImageNet norm, EfficientNet-B2 pretraining |
+
+Reproduce EDA: open and run `dataset_analysis.ipynb` (requires `data/raw/fer2013.csv`).
+
+---
+
+## 4. Methods
 
 We implemented four model families behind a single factory (`src/models/__init__.py` → `create_model()`).
 
-### 3.1 Baseline CNN
+### 4.1 Baseline CNN
 
 Three conv blocks (32→64→128 channels), batch norm, max pooling, MLP head with dropout. Trained from scratch at **48×48** without ImageNet weights. Serves as a simple, fully custom baseline.
 
-### 3.2 SE-CNN
+### 4.2 SE-CNN
 
 Same backbone as the baseline with **Squeeze-and-Excitation** blocks (`src/models/se_block.py`, `src/models/se_cnn.py`) to re-weight channel responses. Hypothesis: attention helps on noisy, low-res faces.
 
-### 3.3 ResNet-18 transfer learning
+### 4.3 ResNet-18 transfer learning
 
 TorchVision `ResNet18_Weights.DEFAULT`, grayscale → 3-channel repeat, replaced final linear for 7 classes (`src/models/resnet18_transfer.py`). Establishes a strong transfer-learning baseline at 48×48 (or configurable size).
 
-### 3.4 EfficientNet-B2 (final model)
+### 4.4 EfficientNet-B2 (final model)
 
 ImageNet-pretrained EfficientNet-B2 (`src/models/efficientnet_transfer.py`):
 
@@ -119,7 +191,7 @@ ImageNet-pretrained EfficientNet-B2 (`src/models/efficientnet_transfer.py`):
 
 ---
 
-## 4. Work Performed (Pipeline and Engineering)
+## 5. Work Performed (Pipeline and Engineering)
 
 | Step | What we did | Why |
 |------|-------------|-----|
@@ -151,9 +223,9 @@ python -m src.train --csv data/raw/fer2013.csv --model efficientnet_b2 --weights
 
 ---
 
-## 5. Results
+## 6. Results
 
-### 5.1 Model comparison (test set, n = 7,178)
+### 6.1 Model comparison (test set, n = 7,178)
 
 | Model | Accuracy | Macro-F1 | Weighted-F1 |
 |-------|----------:|---------:|------------:|
@@ -164,7 +236,7 @@ python -m src.train --csv data/raw/fer2013.csv --model efficientnet_b2 --weights
 
 EfficientNet-B2 improves **test macro-F1 by +0.082** absolute over ResNet-18 and **+0.227** over the baseline CNN—confirming that architecture, resolution, and the stronger training recipe matter more than shallow capacity increases alone.
 
-### 5.2 EfficientNet-B2 — validation vs test
+### 6.2 EfficientNet-B2 — validation vs test
 
 | Split | Samples | Accuracy | Macro-F1 | Weighted-F1 |
 |-------|--------:|---------:|---------:|------------:|
@@ -175,7 +247,7 @@ Validation and test metrics are aligned (no large gap), suggesting the hold-out 
 
 **Best checkpoint:** epoch **32** by validation macro-F1 (**0.6973** in `outputs/history_efficientnet_b2.json`), saved as `outputs/checkpoints/best_efficientnet_b2.pt`.
 
-### 5.3 Per-class performance (EfficientNet-B2, test)
+### 6.3 Per-class performance (EfficientNet-B2, test)
 
 | Emotion | Precision | Recall | F1 | Support |
 |---------|----------:|-------:|---:|--------:|
@@ -190,7 +262,7 @@ Validation and test metrics are aligned (no large gap), suggesting the hold-out 
 **Strongest:** happiness, surprise (high precision; happiness rarely confused).  
 **Weakest:** fear, sadness (lower recall; mutually confused with each other and neutral).
 
-### 5.4 ResNet-18 per-class F1 (test, reference)
+### 6.4 ResNet-18 per-class F1 (test, reference)
 
 | Emotion | F1 | Notes |
 |---------|---:|-------|
@@ -201,7 +273,7 @@ Validation and test metrics are aligned (no large gap), suggesting the hold-out 
 
 EfficientNet-B2’s largest gain on fear (+0.113 F1) and sadness (+0.105 F1) explains most of the macro-F1 improvement.
 
-### 5.5 Training dynamics (EfficientNet-B2)
+### 6.5 Training dynamics (EfficientNet-B2)
 
 Key milestones from `outputs/history_efficientnet_b2.json`:
 
@@ -218,21 +290,21 @@ After unfreezing (epoch 3), validation macro-F1 rises sharply—pretraining prov
 
 **Learning curves** (loss, accuracy, macro-F1 vs epoch):
 
-![Training and validation curves](outputs/figures/curves_efficientnet_b2.png)
+![Training and validation curves — loss, accuracy, macro-F1](docs/figures/curves_efficientnet_b2.png)
 
-*Generated during training to `outputs/figures/curves_efficientnet_b2.png`. Reproduce with the EfficientNet training command above.*
+*Saved during training (`outputs/figures/curves_efficientnet_b2.png`). Sharp jump at epoch 3 matches backbone unfreeze.*
 
-### 5.6 Confusion matrices
+### 6.6 Confusion matrices
 
 **Test set** (rows = true label, columns = predicted; order: anger, disgust, fear, happiness, sadness, surprise, neutral):
 
-![Confusion matrix — EfficientNet-B2, test](outputs/metrics/confusion_matrix_efficientnet_b2_test.png)
+![Confusion matrix — EfficientNet-B2, test split](docs/figures/confusion_matrix_efficientnet_b2_test.png)
 
-**Validation set:**
+**Validation split:**
 
-![Confusion matrix — EfficientNet-B2, validation](outputs/metrics/confusion_matrix_efficientnet_b2_val.png)
+![Confusion matrix — EfficientNet-B2, validation split](docs/figures/confusion_matrix_efficientnet_b2_val.png)
 
-*PNG files are written by `src/evaluate.py`. Numeric matrix for test (from `outputs/metrics/classification_report_efficientnet_b2_test.json`):*
+*Produced by `src/evaluate.py`. Numeric test matrix (from `outputs/metrics/classification_report_efficientnet_b2_test.json`):*
 
 | True \\ Pred | anger | disgust | fear | happy | sad | surprise | neutral |
 |--------------|------:|--------:|-----:|------:|----:|---------:|--------:|
@@ -244,23 +316,23 @@ After unfreezing (epoch 3), validation macro-F1 rises sharply—pretraining prov
 | surprise | 16 | 0 | 61 | 28 | 6 | **699** | 21 |
 | neutral | 72 | 1 | 59 | 55 | 173 | 15 | **858** |
 
-### 5.7 Error analysis
+### 6.7 Error analysis
 
 1. **Fear ↔ sadness ↔ neutral:** Fear misclassifications include 173→sadness, 92→neutral, 100→anger; sadness includes 123→fear and 175→neutral. These pairs share subdued mouth/eyebrow geometry on 48×48 crops.
 2. **Anger ↔ sadness/fear:** 112 anger samples called sadness; symmetric confusion in negative valence classes.
 3. **Happiness** is the cleanest column (1573/1774 correct); most errors go to neutral or surprise.
 4. **Disgust** has high precision (0.84) but moderate recall (0.71)—expected with only 111 test samples.
-5. **Domain shift:** Webcam faces (see §6) differ in lighting, pose, and resolution from FER crops; temporal smoothing in the app mitigates label flicker.
+5. **Domain shift:** Webcam faces (see §7) differ in lighting, pose, and resolution from FER crops; temporal smoothing in the app mitigates label flicker.
 
 ---
 
-## 6. Deployment: Demo and Real-Time Recognition
+## 7. Deployment: Demo and Real-Time Recognition
 
-### 6.1 Streamlit dashboard
+### 7.1 Streamlit dashboard
 
 `streamlit run app/demo.py` — upload an image, select model/checkpoint, view top-k probabilities and bar chart. Defaults point to EfficientNet-B2 at 224px with ImageNet normalization.
 
-### 6.2 Real-time webcam pipeline
+### 7.2 Real-time webcam pipeline
 
 ```bash
 python -m app.realtime \
@@ -275,7 +347,7 @@ python -m app.realtime \
 
 Pipeline: OpenCV capture → **Haar frontal-face detector** → crop → same preprocessing as offline inference → EfficientNet-B2 → **moving average over 5 frames** for stable labels. Runs on **CUDA** when available (see terminal logs in screenshots).
 
-### 6.3 Real-time detection examples
+### 7.3 Real-time detection examples
 
 The model was tested live on a laptop webcam. Below: bounding box, emotion label, and confidence.
 
@@ -291,7 +363,7 @@ These examples show the deployment path works end-to-end: face localization, 224
 
 ---
 
-## 7. Findings and Conclusions
+## 8. Findings and Conclusions
 
 1. **Transfer learning at higher resolution wins on FER-2013.** EfficientNet-B2 at 224px with ImageNet pretraining and a disciplined fine-tuning recipe reaches **~72% test accuracy** and **~0.715 macro-F1**, competitive with published EfficientNet-B2 results on this benchmark (~70–73% accuracy range).
 
@@ -305,7 +377,7 @@ These examples show the deployment path works end-to-end: face localization, 224
 
 ---
 
-## 8. Limitations and Future Work
+## 9. Limitations and Future Work
 
 | Limitation | Possible direction |
 |------------|-------------------|
@@ -318,7 +390,7 @@ These examples show the deployment path works end-to-end: face localization, 224
 
 ---
 
-## 9. Reproducibility
+## 10. Reproducibility
 
 | Artifact | Path |
 |----------|------|
@@ -326,8 +398,9 @@ These examples show the deployment path works end-to-end: face localization, 224
 | Training history | `outputs/history_efficientnet_b2.json` |
 | Val metrics JSON | `outputs/metrics/classification_report_efficientnet_b2_val.json` |
 | Test metrics JSON | `outputs/metrics/classification_report_efficientnet_b2_test.json` |
-| Curves | `outputs/figures/curves_efficientnet_b2.png` |
-| Confusion matrices | `outputs/metrics/confusion_matrix_efficientnet_b2_{val,test}.png` |
+| EDA & report figures | `docs/figures/` (`output.png`, `class distrib train val.png`, `sample.png`, curves, confusion matrices, `realtime/`) |
+| Curves (training) | `outputs/figures/curves_efficientnet_b2.png` |
+| Confusion matrices (eval) | `outputs/metrics/confusion_matrix_efficientnet_b2_{val,test}.png` |
 | Tests | `pytest -q` (19 passed) |
 
 **Evaluate final model:**
@@ -345,7 +418,7 @@ python -m src.evaluate \
 
 ---
 
-## 10. References
+## 11. References
 
 - Goodfellow et al., *Challenges in representation learning: Facial expression recognition challenge* (FER-2013).
 - Hu et al., *Squeeze-and-Excitation Networks* (SE blocks).
@@ -354,4 +427,19 @@ python -m src.evaluate \
 
 ---
 
-*Report generated from repository code, `outputs/` metrics, and real-time demo captures in `docs/figures/realtime/`.*
+### Figure index (`docs/figures/`)
+
+| File | Description |
+|------|-------------|
+| `output.png` | Global class counts (EDA) |
+| `class distrib train val.png` | Class counts by train / val / test (EDA) |
+| `sample.png` | One random 48×48 face per emotion (EDA) |
+| `curves_efficientnet_b2.png` | Train/val loss, accuracy, macro-F1 |
+| `confusion_matrix_efficientnet_b2_test.png` | Test confusion matrix |
+| `confusion_matrix_efficientnet_b2_val.png` | Validation confusion matrix |
+| `realtime/happiness_87.7.png` | Webcam demo — happiness |
+| `realtime/fear_84.2.png` | Webcam demo — fear |
+
+---
+
+*Report: repository code, `dataset_analysis.ipynb`, `outputs/` metrics, figures under `docs/figures/`.*

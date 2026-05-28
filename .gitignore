@@ -35,4 +35,4 @@ outputs/metrics/*
 outputs/history_*.json
 
 # --- Plans and personal notes ---
-docs/
+# docs/

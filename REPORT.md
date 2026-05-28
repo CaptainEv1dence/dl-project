@@ -56,8 +56,10 @@ python -m src.data.convert_folders_to_csv --raw-dir data/raw --out data/raw/fer2
 | neutral   | 6,198                | 17.3%           |
 
 
-![Overall label distribution](docs/figures/class distrib.png)
-![Distribution across splits](docs/figures/class distrib train val.png)
+![Overall label distribution](docs/figures/class_distrib.png)
+
+![Distribution across splits](docs/figures/class_distrib_train_val.png)
+
 ![Samples](docs/figures/sample.png)
 
 Pixel statistics (grayscale): mean **129.38**, std **65.08**.

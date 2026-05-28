@@ -1,5 +1,9 @@
 # --- Agent / local instructions ---
 AGENTS.md
+.DS_Store
+*copilot*
+*claude*
+*cursor*
 
 # --- Python ---
 __pycache__/
@@ -31,4 +35,4 @@ outputs/metrics/*
 outputs/history_*.json
 
 # --- Plans and personal notes ---
-docs/superpowers/
+docs/

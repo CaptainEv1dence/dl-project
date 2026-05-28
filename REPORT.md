@@ -43,6 +43,8 @@ python -m src.data.convert_folders_to_csv --raw-dir data/raw --out data/raw/fer2
 | Validation | `PublicTest`  | 2,870   |
 | Test       | `PrivateTest` | 7,178   |
 
+
+
 | Emotion   | Train+val+test count | Share (approx.) |
 | --------- | -------------------- | --------------- |
 | anger     | 4,953                | 13.8%           |
@@ -77,6 +79,7 @@ Data readiness is validated with:
 ```bash
 python -m src.data.prepare_data --csv data/raw/fer2013.csv --out data/processed/dataset_stats.json
 ```
+
 --
 
 ## 4. Methods
@@ -110,15 +113,15 @@ ImageNet-pretrained EfficientNet-B2 (`src/models/efficientnet_transfer.py`):
 | Hyperparameter   | Value                                  |
 | ---------------- | -------------------------------------- |
 | Optimizer        | AdamW                                  |
-| Learning rate    | 3×10⁻⁴                                 |
-| Weight decay     | 10⁻⁴                                   |
+| Learning rate    | 3×10^-4                                |
+| Weight decay     | 10^-4                                  |
 | Scheduler        | CosineAnnealingLR (45 epochs)          |
 | Batch size       | 32                                     |
-| Loss             | CrossEntropy + **label smoothing 0.1** |
-| Class weights    | **sqrt** of balanced weights           |
+| Loss             | CrossEntropy + label smoothing 0.1     |
+| Class weights    | sqrt of balanced weights               |
 | AMP              | enabled                                |
 | Gradient clip    | 1.0                                    |
-| Selection metric | Validation **macro-F1**                |
+| Selection metric | Validation   macro-F1                  |
 
 
 **Rationale:** Literature and our ResNet-18 results showed transfer learning beats from-scratch CNNs on FER-2013. EfficientNet-B2 offers a better accuracy–efficiency trade-off than ResNet-18. Label smoothing and sqrt class weights mitigate overconfidence and imbalance without over-penalizing majority classes. Freeze-then-unfreeze stabilizes the new head before updating low-level filters.
@@ -130,7 +133,7 @@ ImageNet-pretrained EfficientNet-B2 (`src/models/efficientnet_transfer.py`):
 
 | Step       | What we did                                                                                               | Why                                            |
 | ---------- | --------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
-| Data layer | CSV loader, split filtering, transforms, folder->CSV converter                                             | Reproducible FER-2013 ingestion                |
+| Data layer | CSV loader, split filtering, transforms, folder->CSV converter                                            | Reproducible FER-2013 ingestion                |
 | Training   | Unified `src/train.py` CLI for all models; checkpoint by val macro-F1; history JSON + curve plots         | Fair comparison, traceability                  |
 | Metrics    | Accuracy, macro/weighted F1, per-class report, confusion matrices (`src/utils/metrics.py`, `plotting.py`) | Imbalance-aware evaluation                     |
 | Evaluation | `src/evaluate.py` for val/test splits                                                                     | Standardized reports after training            |
@@ -163,7 +166,6 @@ python -m src.train --csv data/raw/fer2013.csv --model efficientnet_b2 --weights
 
 ### 6.1 Model comparison (test set, n = 7,178)
 
-
 | Model               | Accuracy   | Macro-F1   | Weighted-F1 |
 | ------------------- | ---------- | ---------- | ----------- |
 | Baseline CNN        | 0.592      | 0.488      | 0.581       |
@@ -171,8 +173,6 @@ python -m src.train --csv data/raw/fer2013.csv --model efficientnet_b2 --weights
 | ResNet-18           | 0.637      | 0.633      | 0.636       |
 | **EfficientNet-B2** | **0.7196** | **0.7147** | **0.7192**  |
 
-
-EfficientNet-B2 improves **test macro-F1 by +0.082** absolute over ResNet-18 and **+0.227** over the baseline CNN—confirming that architecture, resolution, and the stronger training recipe matter more than shallow capacity increases alone.
 
 ### 6.2 EfficientNet-B2 — validation vs test
 
@@ -182,10 +182,7 @@ EfficientNet-B2 improves **test macro-F1 by +0.082** absolute over ResNet-18 and
 | Validation | 2,870   | 0.7129   | 0.6972   | 0.7135      |
 | Test       | 7,178   | 0.7196   | 0.7147   | 0.7192      |
 
-
-Validation and test metrics are aligned (no large gap), suggesting the hold-out validation split is a reasonable proxy for final performance.
-
-**Best checkpoint:** epoch **32** by validation macro-F1 (**0.6973** in `outputs/history_efficientnet_b2.json`), saved as `outputs/checkpoints/best_efficientnet_b2.pt`.
+Best checkpoint saved as `outputs/checkpoints/best_efficientnet_b2.pt`.
 
 ### 6.3 Per-class performance (EfficientNet-B2, test)
 
@@ -201,9 +198,6 @@ Validation and test metrics are aligned (no large gap), suggesting the hold-out 
 | neutral   | 0.651     | 0.696  | 0.673     | 1,233   |
 
 
-**Strongest:** happiness, surprise (high precision; happiness rarely confused).  
-**Weakest:** fear, sadness (lower recall; mutually confused with each other and neutral).
-
 ### 6.4 ResNet-18 per-class F1 (test, reference)
 
 
@@ -213,7 +207,6 @@ Validation and test metrics are aligned (no large gap), suggesting the hold-out 
 | sadness   | 0.500 | Often confused with fear/neutral |
 | happiness | 0.827 | Already strong                   |
 | surprise  | 0.775 | —                                |
-
 
 EfficientNet-B2’s largest gain on fear (+0.113 F1) and sadness (+0.105 F1) explains most of the macro-F1 improvement.
 
@@ -234,15 +227,6 @@ Confusion matrix — EfficientNet-B2, test split
 
 Confusion matrix — EfficientNet-B2, validation split
 (docs/figures/confusion_matrix_efficientnet_b2_val.png)
-
-
-### 6.7 Error analysis
-
-1. **Fear ↔ sadness ↔ neutral:** Fear misclassifications include 173->sadness, 92->neutral, 100->anger; sadness includes 123->fear and 175->neutral. These pairs share subdued mouth/eyebrow geometry on 48×48 crops.
-2. **Anger ↔ sadness/fear:** 112 anger samples called sadness; symmetric confusion in negative valence classes.
-3. **Happiness** is the cleanest column (1573/1774 correct); most errors go to neutral or surprise.
-4. **Disgust** has high precision (0.84) but moderate recall (0.71)—expected with only 111 test samples.
-5. **Domain shift:** Webcam faces (see §7) differ in lighting, pose, and resolution from FER crops; temporal smoothing in the app mitigates label flicker.
 
 ---
 
@@ -281,39 +265,12 @@ The model was tested live on a laptop webcam. Below: bounding box, emotion label
 
 ## 8. Findings and Conclusions
 
-1. **Transfer learning at higher resolution wins on FER-2013.** EfficientNet-B2 at 224px with ImageNet pretraining and a disciplined fine-tuning recipe reaches **~72% test accuracy** and **~0.715 macro-F1**, competitive with published EfficientNet-B2 results on this benchmark (~70–73% accuracy range).
-2. **Macro-F1 and class weights are essential** given imbalance; sqrt-weighted loss + label smoothing improved minority-class behavior without collapsing majority-class precision.
-3. **Freeze-then-unfreeze is effective:** Most gain appears at epoch 3 when the backbone unfreezes; best val macro-F1 occurs mid-schedule (epoch 32), not the last epoch—early stopping on val macro-F1 is justified.
-4. **Remaining errors are structural:** fear/sadness/neutral confusion reflects limited resolution and subjective labels in FER-2013, not only model capacity.
-5. **The stack is deployable:** shared inference code powers CLI, Streamlit, and real-time OpenCV demos on GPU.
-
----
-
-## 9. Limitations and Future Work
-
-
-| Limitation                          | Possible direction                                                   |
-| ----------------------------------- | -------------------------------------------------------------------- |
-| 48×48 native FER resolution         | Train with face-aligned higher-res crops; MTCNN/RetinaFace alignment |
-| Validation split derived from train | Align with official FER splits for strict benchmark comparison       |
-| Haar cascade on webcam              | Modern face detector (MediaPipe, YuNet) for robust crops             |
-| Seven discrete classes              | Continuous affect or compound emotions                               |
-| Single frame                        | Temporal model (LSTM/Transformer) over video clips                   |
-| Class imbalance                     | Focal loss, oversampling disgust, ensemble                           |
-
-
+1. **Transfer learning at higher resolution wins on FER-2013.** EfficientNet-B2 at 224px with ImageNet pretraining and a disciplined fine-tuning recipe reaches **~72% test accuracy** and **~0.715 macro-F1**.
+2. **Macro-F1 and class weights are essential** given imbalance: sqrt-weighted loss + label smoothing improved minority-class behavior without collapsing majority-class precision.
+3. **Freeze-then-unfreeze is effective:** most gain appears at epoch 3 when the backbone unfreezes, best val macro-F1 occurs mid-schedule (epoch 32), not the last epoch—early stopping on val macro-F1 is justified.
 ---
 
 ## 10. Reproducibility
-
-
-| Artifact                  | Path                                                                                                                 |
-| ------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| Best weights              | `outputs/checkpoints/best_efficientnet_b2.pt`                                                                        |
-| Training history          | `outputs/history_efficientnet_b2.json`                                                                               |
-| Val metrics JSON          | `outputs/metrics/classification_report_efficientnet_b2_val.json`                                                     |
-| Test metrics JSON         | `outputs/metrics/classification_report_efficientnet_b2_test.json`                                                    |
-| Curves (training)         | `outputs/figures/curves_efficientnet_b2.png`                                                                         |
 
 **Evaluate final model:**
 

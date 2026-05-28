@@ -223,12 +223,12 @@ After unfreezing (epoch 3), validation macro-F1 rises sharply—pretraining prov
 **Test set** (rows = true label, columns = predicted; order: anger, disgust, fear, happiness, sadness, surprise, neutral):
 
 Confusion matrix — EfficientNet-B2, test split
-![Confusion matrix test](docs/figures/confusion_matrix_efficientnet_b2_test.png)
+![Confusion matrix test](outputs/metrics/confusion_matrix_efficientnet_b2_test.png)
 
 **Validation split:**
 
 Confusion matrix — EfficientNet-B2, validation split
-![Confusion matrix val](docs/figures/confusion_matrix_efficientnet_b2_val.png)
+![Confusion matrix val](outputs/metrics/confusion_matrix_efficientnet_b2_val.png)
 
 ---
 
